@@ -2,18 +2,19 @@ import os
 import google.generativeai as genai
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
-from dotenv import load_dotenv # Import load_dotenv from python-dotenv
+from dotenv import load_dotenv
 
 # Load environment variables from a .env file
 load_dotenv()
 
 # Gemini API setup
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") # Get API key from environment variable
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-# Telegram Bot Token
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") # Get bot token from environment variable
+# Telegram Bot Token and Webhook URL
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 # User session data
 user_sessions = {}
@@ -134,8 +135,16 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(handle_model_selection, pattern="^(ltai|teacheru)$"))
 
-    # Start the bot
-    application.run_polling()
+    # Set up webhooks
+    if WEBHOOK_URL:
+        # We pass the application's unique path
+        application.run_webhook(listen="0.0.0.0",
+                                port=int(os.environ.get("PORT", "8080")),
+                                url_path=TELEGRAM_BOT_TOKEN,
+                                webhook_url=f"{WEBHOOK_URL}/{TELEGRAM_BOT_TOKEN}")
+    else:
+        # Fallback to polling for local development if webhook is not set
+        application.run_polling()
 
 if __name__ == "__main__":
     main()
