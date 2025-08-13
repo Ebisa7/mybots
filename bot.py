@@ -2,14 +2,18 @@ import os
 import google.generativeai as genai
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
+from dotenv import load_dotenv # Import load_dotenv from python-dotenv
+
+# Load environment variables from a .env file
+load_dotenv()
 
 # Gemini API setup
-GEMINI_API_KEY = "AIzaSyBIw_5HjlmqFvzHkU3iHDEAnPyi168_FJE"  # Replace with your Gemini API key
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") # Get API key from environment variable
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash')  # Updated to gemini-2.0-flash
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Telegram Bot Token
-TELEGRAM_BOT_TOKEN = "7620876609:AAE0seBRDbSwUj9llDAr2IMbkMKsYDyPwmg"  # Replace with your Telegram bot token
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") # Get bot token from environment variable
 
 # User session data
 user_sessions = {}
@@ -95,7 +99,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_sessions[user_id]["messages"].append({"role": "user", "content": user_input})
 
     # Get the AI's response
-    system_instructions = get_system_instructions(update.message.from_user.first_name, user_sessions[user_id]["model"])
+    user_name = update.message.from_user.first_name
+    system_instructions = get_system_instructions(user_name, user_sessions[user_id]["model"])
     response = await get_gemini_response(user_sessions[user_id]["messages"], system_instructions)
 
     # Add AI's response to the session
